@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "../constants/apiPath";
 
-const API_URL = "https://58qrqx1y53.execute-api.us-east-1.amazonaws.com/prod/products";
 
 const ProductList = () => {
     const [products, setProducts] = useState<{ id: string; name: string; price: number }[]>([]);
