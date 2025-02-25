@@ -1,4 +1,16 @@
 export const handler = async (event: any) => {
+    if (event.httpMethod === "OPTIONS") {
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS"
+            },
+            body: ""
+        };
+    }
+
     const products = [
         {id: "1", name: "Product A", price: 100},
         {id: "2", name: "Product B", price: 200},
@@ -10,7 +22,7 @@ export const handler = async (event: any) => {
         headers: {
             "Access-Control-Allow-Headers" : "Content-Type",
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+            "Access-Control-Allow-Methods": "GET, OPTIONS"
         },
         body: JSON.stringify(products),
     };
