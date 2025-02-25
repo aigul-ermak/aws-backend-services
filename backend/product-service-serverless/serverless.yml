@@ -1,0 +1,31 @@
+service: product-service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1  # Replace with your desired region (e.g., us-west-2)
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource: "*"
+
+functions:
+  getProducts:
+    handler: handler.handler
+    events:
+      - http:
+          path: products
+          method: get
+          cors: true
+
+  getProductsById:
+    handler: getProductsById.handler
+    events:
+      - http:
+          path: products/{productId}
+          method: get
+          cors: true
+
+plugins:
+  - serverless-offline  # Optional, for local testing
