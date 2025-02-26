@@ -1,4 +1,6 @@
-module.exports.handler = async (event) => {
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     if (event.httpMethod === "OPTIONS") {
         return {
             statusCode: 200,
@@ -12,6 +14,7 @@ module.exports.handler = async (event) => {
     }
 
     const productId = event.pathParameters?.productId;
+
     if (!productId) {
         return {
             statusCode: 400,
@@ -43,8 +46,6 @@ module.exports.handler = async (event) => {
             body: JSON.stringify({ message: "Product not found" }),
         };
     }
-
-
 
     return {
         statusCode: 200,
