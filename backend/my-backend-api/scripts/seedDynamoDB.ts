@@ -13,13 +13,13 @@ const products = [
 
 const stocks = products.map(product => ({
     product_id: product.id,
-    count: Math.floor(Math.random() * 50) + 1 
+    count: Math.floor(Math.random() * 50) + 1
 }));
 
 const insertData = async () => {
     for (const product of products) {
         await docClient.send(new PutCommand({
-            TableName: "products",
+            TableName: "AWS_products",
             Item: product
         }));
         console.log(`Inserted product: ${product.title}`);
@@ -27,7 +27,7 @@ const insertData = async () => {
 
     for (const stock of stocks) {
         await docClient.send(new PutCommand({
-            TableName: "stocks",
+            TableName: "AWS_stocks",
             Item: stock
         }));
         console.log(`Inserted stock for product_id: ${stock.product_id}`);
