@@ -13,7 +13,8 @@ import {
   useUpsertAvailableProduct,
 } from "~/queries/products";
 
-const initialValues: AvailableProduct = AvailableProductSchema.cast({});
+const initialValues: AvailableProduct = AvailableProductSchema.cast({}) as AvailableProduct;
+
 
 export default function PageProductForm() {
   const navigate = useNavigate();

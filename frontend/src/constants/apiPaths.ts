@@ -1,14 +1,14 @@
-// const API_PATHS = {
-//   product: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-//   order: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-//   import: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-//   bff: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-//   cart: "https://.execute-api.eu-west-1.amazonaws.com/dev",
-// };
-
 const API_PATHS = {
-  product:
-    "https://ow9fro0014.execute-api.us-east-1.amazonaws.com/prod/",
+  product: "https://naabdgciyh.execute-api.us-east-1.amazonaws.com/prod/",
+  order: "https://naabdgciyh.execute-api.us-east-1.amazonaws.com/prod/",
+  import: "https://naabdgciyh.execute-api.us-east-1.amazonaws.com/prod/",
+  bff: "https://naabdgciyh.execute-api.us-east-1.amazonaws.com/prod/",
+  cart: "https://naabdgciyh.execute-api.us-east-1.amazonaws.com/prod/",
 };
+
+// const API_PATHS = {
+//   product:
+//     "https://naabdgciyh.execute-api.us-east-1.amazonaws.com/prod/",
+// };
 
 export default API_PATHS;
