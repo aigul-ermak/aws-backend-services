@@ -3,6 +3,7 @@ import {Construct} from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 
 
 export class MyBackendApiStack extends cdk.Stack {
@@ -34,6 +35,23 @@ export class MyBackendApiStack extends cdk.Stack {
             },
         });
 
+        const createProductLambda = new NodejsFunction(this, 'CreateProductLambda', {
+            runtime: lambda.Runtime.NODEJS_18_X,
+            entry: 'lambda/createProduct.ts', // Path to your Lambda function code
+            handler: 'handler',
+            environment: {
+                PRODUCTS_TABLE_NAME: productsTable.tableName,
+                STOCKS_TABLE_NAME: stocksTable.tableName,
+            },
+        });
+
+        productsTable.grantReadWriteData(createProductLambda);
+        stocksTable.grantReadWriteData(createProductLambda);
+        productsTable.grantReadData(getProductsListLambda);
+        stocksTable.grantReadData(getProductsListLambda);
+        productsTable.grantReadData(getProductsByIdLambda);
+
+
         // API Gateway with CORS Enabled
         const api = new apigateway.RestApi(this, 'ProductServiceApi', {
             restApiName: 'Product Service',
@@ -47,6 +65,8 @@ export class MyBackendApiStack extends cdk.Stack {
         // /products endpoint (GET -> getProductsListLambda)
         const products = api.root.addResource('products');
         products.addMethod('GET', new apigateway.LambdaIntegration(getProductsListLambda));
+        products.addMethod('POST', new apigateway.LambdaIntegration(createProductLambda));
+
 
         // /products/{productId} endpoint (GET -> getProductsByIdLambda)
         const productById = products.addResource('{productId}');
