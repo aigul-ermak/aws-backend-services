@@ -1,14 +1,14 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
-import { v4 as uuidv4 } from "uuid";
+import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
+import {DynamoDBDocumentClient, PutCommand} from "@aws-sdk/lib-dynamodb";
+import {v4 as uuidv4} from "uuid";
 
-const client = new DynamoDBClient({ region: "us-east-1" });
+const client = new DynamoDBClient({region: "us-east-1"});
 const docClient = DynamoDBDocumentClient.from(client);
 
 const products = [
-    { id: uuidv4(), title: "Laptop", description: "High performance laptop", price: 1200 },
-    { id: uuidv4(), title: "Phone", description: "Latest smartphone", price: 800 },
-    { id: uuidv4(), title: "Headphones", description: "Noise-canceling headphones", price: 250 }
+    {id: uuidv4(), title: "Laptop", description: "High performance laptop", price: 1200},
+    {id: uuidv4(), title: "Phone", description: "Latest smartphone", price: 800},
+    {id: uuidv4(), title: "Headphones", description: "Noise-canceling headphones", price: 250}
 ];
 
 const stocks = products.map(product => ({
