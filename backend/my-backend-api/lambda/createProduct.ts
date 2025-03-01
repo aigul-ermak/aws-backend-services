@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { PutCommand } from "@aws-sdk/lib-dynamodb";
+import {PutCommand, TransactWriteCommand} from "@aws-sdk/lib-dynamodb";
 import { dynamoDB, PRODUCTS_TABLE, STOCKS_TABLE } from "./utils/dynamodbClient";
 
 interface Product {
@@ -66,13 +66,25 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             count: body.count || 0,
         };
 
-        // Insert the stock into the Stocks table
         await dynamoDB.send(
-            new PutCommand({
-                TableName: STOCKS_TABLE,
-                Item: stock,
+            new TransactWriteCommand({
+                TransactItems: [
+                    {
+                        Put: {
+                            TableName: PRODUCTS_TABLE,
+                            Item: product,
+                        },
+                    },
+                    {
+                        Put: {
+                            TableName: STOCKS_TABLE,
+                            Item: stock,
+                        },
+                    },
+                ],
             })
         );
+
 
         // Return success response
         return {
