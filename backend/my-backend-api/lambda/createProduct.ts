@@ -56,7 +56,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         // Create the stock object (default count to 0)
         const stock: Stock = {
             product_id: body.id,
-            count: body.count || 0,
+            count: Number(body.count) || 0,
         };
 
         await dynamoDB.send(
