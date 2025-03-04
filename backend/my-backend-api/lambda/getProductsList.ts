@@ -1,18 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDB, PRODUCTS_TABLE, STOCKS_TABLE } from "./utils/dynamodbClient";
+import {Product} from "./utils/interfaces/product.interface";
+import {Stock} from "./utils/interfaces/stock.interface";
 
-interface Product {
-    id: string;
-    title: string;
-    description?: string;
-    price: number;
-}
 
-interface Stock {
-    product_id: string;
-    count: number;
-}
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     if (event.httpMethod === "OPTIONS") {

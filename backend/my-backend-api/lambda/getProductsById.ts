@@ -1,13 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamoDB, PRODUCTS_TABLE } from "./utils/dynamodbClient";
+import {dynamoDB, PRODUCTS_TABLE, STOCKS_TABLE} from "./utils/dynamodbClient";
+import {Product} from "./utils/interfaces/product.interface";
+import {Stock} from "./utils/interfaces/stock.interface";
 
-interface Product {
-    id: string;
-    title: string;
-    description?: string;
-    price: number;
-}
+
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     if (event.httpMethod === "OPTIONS") {
@@ -58,13 +55,26 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
         const product: Product = Item as Product;
 
+        const stockCommand = new GetCommand({
+            TableName: STOCKS_TABLE,
+            Key: { product_id: productId },
+        });
+
+        const { Item: stockItem } = await dynamoDB.send(stockCommand);
+        const stock: Stock = stockItem as Stock;
+
+        const mergedProduct = {
+            ...product,
+            count: stock ? stock.count : 0,
+        };
+
         return {
             statusCode: 200,
             headers: {
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, OPTIONS"
             },
-            body: JSON.stringify(product),
+            body: JSON.stringify(mergedProduct),
         };
     } catch (error) {
         console.error("Error fetching product:", error);
