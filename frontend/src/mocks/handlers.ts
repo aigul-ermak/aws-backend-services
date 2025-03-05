@@ -1,4 +1,4 @@
-import { rest } from "msw";
+import {rest} from "msw";
 import API_PATHS from "~/constants/apiPaths";
 import { availableProducts, orders, products, cart } from "~/mocks/data";
 import { CartItem } from "~/models/CartItem";

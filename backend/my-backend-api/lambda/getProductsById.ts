@@ -1,4 +1,13 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
+import { dynamoDB, PRODUCTS_TABLE } from "./utils/dynamodbClient";
+
+interface Product {
+    id: string;
+    title: string;
+    description?: string;
+    price: number;
+}
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     if (event.httpMethod === "OPTIONS") {
@@ -13,13 +22,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         };
     }
 
-    const productId = event.pathParameters?.productId;
+    const productId: string | undefined = event.pathParameters?.productId;
 
     if (!productId) {
         return {
             statusCode: 400,
             headers: {
-                "Access-Control-Allow-Headers": "Content-Type",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, OPTIONS"
             },
@@ -27,33 +35,46 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         };
     }
 
-    const products = [
-        { id: "1", name: "Product A", price: 100 },
-        { id: "2", name: "Product B", price: 200 },
-        { id: "3", name: "Project C", price: 300 },
-    ];
+    try {
+        console.log(`Fetching product with ID: ${productId}`);
 
-    const product = products.find(p => p.id === productId);
+        const getCommand = new GetCommand({
+            TableName: PRODUCTS_TABLE,
+            Key: { id: productId },
+        });
 
-    if (!product) {
+        const { Item } = await dynamoDB.send(getCommand);
+
+        if (!Item) {
+            return {
+                statusCode: 404,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS"
+                },
+                body: JSON.stringify({ message: "Product not found" }),
+            };
+        }
+
+        const product: Product = Item as Product;
+
         return {
-            statusCode: 404,
+            statusCode: 200,
             headers: {
-                "Access-Control-Allow-Headers": "Content-Type",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, OPTIONS"
             },
-            body: JSON.stringify({ message: "Product not found" }),
+            body: JSON.stringify(product),
+        };
+    } catch (error) {
+        console.error("Error fetching product:", error);
+        return {
+            statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+            },
+            body: JSON.stringify({ message: "Internal Server Error" }),
         };
     }
-
-    return {
-        statusCode: 200,
-        headers: {
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS"
-        },
-        body: JSON.stringify(product),
-    };
 };
