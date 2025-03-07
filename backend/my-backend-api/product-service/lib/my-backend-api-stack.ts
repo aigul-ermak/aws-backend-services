@@ -16,7 +16,7 @@ export class MyBackendApiStack extends cdk.Stack {
         // Lambda Function to List Products
         const getProductsListLambda = new lambda.Function(this, 'GetProductsListLambda', {
             runtime: lambda.Runtime.NODEJS_18_X,
-            code: lambda.Code.fromAsset('lambda'),
+            code: lambda.Code.fromAsset('product-service/lambda'),
             handler: 'getProductsList.handler',
             environment: {
                 PRODUCTS_TABLE_NAME: productsTable.tableName,
@@ -27,7 +27,7 @@ export class MyBackendApiStack extends cdk.Stack {
         // Lambda Function to Get Product by ID
         const getProductsByIdLambda = new lambda.Function(this, 'GetProductsByIdLambda', {
             runtime: lambda.Runtime.NODEJS_18_X,
-            code: lambda.Code.fromAsset('lambda'),
+            code: lambda.Code.fromAsset('product-service/lambda'),
             handler: 'getProductsById.handler',
             environment: {
                 PRODUCTS_TABLE_NAME: productsTable.tableName,
@@ -37,7 +37,7 @@ export class MyBackendApiStack extends cdk.Stack {
 
         const createProductLambda = new NodejsFunction(this, 'CreateProductLambda', {
             runtime: lambda.Runtime.NODEJS_18_X,
-            entry: 'lambda/createProduct.ts', // Path to your Lambda function code
+            entry: 'product-service/lambda/createProduct.ts', // Path to your Lambda function code
             handler: 'handler',
             environment: {
                 PRODUCTS_TABLE_NAME: productsTable.tableName,
