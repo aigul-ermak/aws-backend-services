@@ -14,6 +14,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             console.error("No file name provided in query parameters.");
             return {
                 statusCode: 400,
+                headers: {
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS"
+                },
                 body: JSON.stringify({ message: "File name is required" }),
             };
         }
@@ -35,13 +40,23 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
         return {
             statusCode: 200,
-            headers: { 'Content-Type': 'text/plain' },
+            headers: {
+                'Content-Type': 'text/plain',
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS"
+            },
             body: signedUrl,
         };
     } catch (error) {
         console.error("Error generating signed URL:", error);
         return {
             statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS"
+            },
             body: JSON.stringify({ message: "Internal Server Error" }),
         };
     }

@@ -12,7 +12,9 @@ export default function PageProducts() {
       <Typography variant="h4" gutterBottom>
         Welcome to My Store
       </Typography>
-      <UploadCSV importApiUrl={importApiUrl} />
+      <Box mb={3}>
+        <UploadCSV importApiUrl={importApiUrl} />
+      </Box>
       <Products />
     </Box>
   );
