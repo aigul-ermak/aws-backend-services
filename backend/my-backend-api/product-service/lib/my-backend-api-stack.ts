@@ -11,15 +11,20 @@ import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 
 
 export class MyBackendApiStack extends cdk.Stack {
+    public readonly catalogItemsQueue: sqs.Queue;
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         const productsTable = dynamodb.Table.fromTableName(this, 'AWSProductsTable', 'AWS_products');
         const stocksTable = dynamodb.Table.fromTableName(this, 'AWSStocksTable', 'AWS_stocks');
 
-        const catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
+        this.catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
             queueName: 'catalogItemsQueue',
             visibilityTimeout: cdk.Duration.seconds(30),
+        });
+
+        new cdk.CfnOutput(this, 'CatalogItemsQueueUrl', {
+            value: this.catalogItemsQueue.queueUrl,
         });
 
         const createProductTopic = new sns.Topic(this, 'CreateProductTopic', {
@@ -46,14 +51,10 @@ export class MyBackendApiStack extends cdk.Stack {
         createProductTopic.grantPublish(catalogBatchProcessLambda);
 
         catalogBatchProcessLambda.addEventSource(
-            new lambdaEventSources.SqsEventSource(catalogItemsQueue, {
+            new lambdaEventSources.SqsEventSource(this.catalogItemsQueue, {
                 batchSize: 5, // Process 5 messages at a time
             })
         );
-
-        new cdk.CfnOutput(this, 'CatalogItemsQueueUrl', {
-            value: catalogItemsQueue.queueUrl,
-        });
 
         new cdk.CfnOutput(this, 'CreateProductTopicArn', {
             value: createProductTopic.topicArn,

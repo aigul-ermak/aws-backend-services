@@ -1,9 +1,13 @@
 import { S3Handler, S3Event } from 'aws-lambda';
-import { S3Client, GetObjectCommand, GetObjectCommandOutput } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import csvParser from 'csv-parser';
 import { Readable } from 'stream';
+import {SendMessageCommand, SQSClient} from "@aws-sdk/client-sqs";
 
 const s3 = new S3Client({});
+const sqs = new SQSClient({});
+
+const SQS_QUEUE_URL = process.env.SQS_QUEUE_URL!;
 
 export const handler: S3Handler = async (event: S3Event) => {
     console.log('Received S3 event:', JSON.stringify(event, null, 2));
@@ -23,6 +27,7 @@ export const handler: S3Handler = async (event: S3Event) => {
                 Key: key,
             });
 
+
             const response = await s3.send(command);
 
 
@@ -32,10 +37,25 @@ export const handler: S3Handler = async (event: S3Event) => {
             }
 
             const stream = response.Body as Readable;
+            const records: any[] = [];
             await new Promise((resolve, reject) => {
                 stream
                     .pipe(csvParser())
-                    .on('data', (data) => console.log('Parsed record:', data))
+                    .on('data', async (data) => {
+                        console.log('Parsed record:', data);
+
+                        try {
+                            await sqs.send(
+                                new SendMessageCommand({
+                                    QueueUrl: SQS_QUEUE_URL,
+                                    MessageBody: JSON.stringify(data),
+                                })
+                            );
+                            console.log(`Sent to SQS: ${JSON.stringify(data)}`);
+                        } catch (error) {
+                            console.error('Error sending message to SQS:', error);
+                        }
+                    })
                     .on('error', (error) => {
                         console.error(`Error parsing file ${key}:`, error);
                         reject(error);
