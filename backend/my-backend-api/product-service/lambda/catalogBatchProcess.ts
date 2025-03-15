@@ -2,7 +2,7 @@ import { SQSEvent } from 'aws-lambda';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 const sns = new SNSClient({});
-const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN!;
+const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN!; // Ensure this is set in CDK
 
 export const handler = async (event: SQSEvent) => {
     console.log('Processing batch:', JSON.stringify(event, null, 2));
@@ -11,7 +11,7 @@ export const handler = async (event: SQSEvent) => {
         const productData = JSON.parse(record.body);
         console.log('Processing product:', productData);
 
-        // Send SNS notification
+        // ✅ Send SNS Notification
         try {
             await sns.send(
                 new PublishCommand({

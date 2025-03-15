@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {Construct} from 'constructs';
+import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
@@ -9,14 +9,15 @@ import * as sns from 'aws-cdk-lib/aws-sns';
 import * as snsSubscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 
-
 export class MyBackendApiStack extends cdk.Stack {
     public readonly catalogItemsQueue: sqs.Queue;
+
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         const productsTable = dynamodb.Table.fromTableName(this, 'AWSProductsTable', 'AWS_products');
         const stocksTable = dynamodb.Table.fromTableName(this, 'AWSStocksTable', 'AWS_stocks');
+
 
         this.catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
             queueName: 'catalogItemsQueue',
@@ -27,13 +28,20 @@ export class MyBackendApiStack extends cdk.Stack {
             value: this.catalogItemsQueue.queueUrl,
         });
 
+
         const createProductTopic = new sns.Topic(this, 'CreateProductTopic', {
             topicName: 'createProductTopic',
         });
 
+
         createProductTopic.addSubscription(
-            new snsSubscriptions.EmailSubscription('your-email@example.com')
+            new snsSubscriptions.EmailSubscription('your-email@example.com') // Replace with actual email
         );
+
+        new cdk.CfnOutput(this, 'CreateProductTopicArn', {
+            value: createProductTopic.topicArn,
+        });
+
 
         const catalogBatchProcessLambda = new NodejsFunction(this, 'CatalogBatchProcessLambda', {
             runtime: lambda.Runtime.NODEJS_18_X,
@@ -46,19 +54,17 @@ export class MyBackendApiStack extends cdk.Stack {
             },
         });
 
+
         productsTable.grantReadWriteData(catalogBatchProcessLambda);
         stocksTable.grantReadWriteData(catalogBatchProcessLambda);
         createProductTopic.grantPublish(catalogBatchProcessLambda);
+
 
         catalogBatchProcessLambda.addEventSource(
             new lambdaEventSources.SqsEventSource(this.catalogItemsQueue, {
                 batchSize: 5, // Process 5 messages at a time
             })
         );
-
-        new cdk.CfnOutput(this, 'CreateProductTopicArn', {
-            value: createProductTopic.topicArn,
-        });
 
         const api = new apigateway.RestApi(this, 'ProductServiceApi', {
             restApiName: 'Product Service',
@@ -79,7 +85,6 @@ export class MyBackendApiStack extends cdk.Stack {
             },
         });
 
-        // Lambda Function to Get Product by ID
         const getProductsByIdLambda = new lambda.Function(this, 'GetProductsByIdLambda', {
             runtime: lambda.Runtime.NODEJS_18_X,
             code: lambda.Code.fromAsset('product-service/lambda'),
@@ -106,24 +111,10 @@ export class MyBackendApiStack extends cdk.Stack {
         stocksTable.grantReadData(getProductsListLambda);
         productsTable.grantReadData(getProductsByIdLambda);
 
-
-        // API Gateway with CORS Enabled
-        // const api = new apigateway.RestApi(this, 'ProductServiceApi', {
-        //     restApiName: 'Product Service',
-        //     defaultCorsPreflightOptions: {
-        //         allowOrigins: apigateway.Cors.ALL_ORIGINS, // Allow all origins
-        //         allowMethods: apigateway.Cors.ALL_METHODS, // Allow all HTTP methods
-        //         allowHeaders: ['Content-Type'], // Allow specific headers
-        //     },
-        // });
-
-        // /products endpoint (GET -> getProductsListLambda)
         const products = api.root.addResource('products');
         products.addMethod('GET', new apigateway.LambdaIntegration(getProductsListLambda));
         products.addMethod('POST', new apigateway.LambdaIntegration(createProductLambda));
 
-
-        // /products/{productId} endpoint (GET -> getProductsByIdLambda)
         const productById = products.addResource('{productId}');
         productById.addMethod('GET', new apigateway.LambdaIntegration(getProductsByIdLambda));
     }

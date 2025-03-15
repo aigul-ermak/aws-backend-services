@@ -36,6 +36,14 @@ export class ImportServiceStack extends cdk.Stack {
             }
         );
 
+        bucket.grantRead(importFileParserLambda);
+        bucket.addEventNotification(
+            s3.EventType.OBJECT_CREATED,
+            new s3n.LambdaDestination(importFileParserLambda),
+            { prefix: 'uploaded/' }
+        );
+
+
         props.catalogItemsQueue.grantSendMessages(importFileParserLambda);
 
     }
