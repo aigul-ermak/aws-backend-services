@@ -17,7 +17,6 @@ export default function Products() {
 
   return (
     <Grid container spacing={4}>
-      {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
       {data.map(({ count, ...product }, index) => (
         <Grid item key={product.id} xs={12} sm={6} md={4}>
           <Card
@@ -25,7 +24,6 @@ export default function Products() {
           >
             <CardMedia
               sx={{ pt: "56.25%" }}
-              // image={`https://source.unsplash.com/random?sig=${index}`}
               image={`https://picsum.photos/seed/${index}/600/400`}
               title="Image title"
             />

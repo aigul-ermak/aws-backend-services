@@ -5,7 +5,7 @@ import UploadCSV from "~/components/UploadCSV";
 
 export default function PageProducts() {
   const importApiUrl =
-    "https://obyvp4e5m7.execute-api.us-east-1.amazonaws.com/prod/import";
+    "https://dwu01n7cwk.execute-api.us-east-1.amazonaws.com/prod/";
 
   return (
     <Box py={3}>

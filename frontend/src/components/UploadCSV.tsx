@@ -1,14 +1,17 @@
 import React, { useState, useRef } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import API_PATHS from "~/constants/apiPaths";
 
 interface UploadCSVProps {
-  importApiUrl: string; // e.g. https://xxxxxxx.execute-api.us-east-1.amazonaws.com/dev/import
+  importApiUrl: string;
 }
 
 const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
   const [file, setFile] = useState<File | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  console.log("Import API Path:", API_PATHS.import);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -29,7 +32,8 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
     try {
       // 1. Get the signed URL from the import lambda
       const fileName = encodeURIComponent(file.name);
-      const url = `${importApiUrl}?name=${fileName}&contentType=${file.type}`;
+      const url = `${importApiUrl}/import?name=${fileName}`;
+
       const response = await fetch(url, { method: "GET" });
 
       if (!response.ok) {
@@ -51,6 +55,10 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
       }
 
       alert("File uploaded successfully!");
+
+      console.log("Uploaded file:", file.name);
+      console.log("Signed URL used:", signedUrl);
+
       removeFile();
     } catch (error) {
       console.error("Upload error:", error);
