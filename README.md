@@ -16,7 +16,7 @@ Infrastructure as Code (IaC): Terraform, AWS CloudFormation
 
 Monitoring & Security: AWS CloudWatch, AWS IAM, AWS KMS
 
-Learning Objectives
+## Learning Objectives
 
 Understand AWS fundamentals and architecture
 
@@ -28,7 +28,7 @@ Implement serverless applications with AWS Lambda and API Gateway
 
 Work with AWS security best practices
 
-Resources
+## Resources
 
 AWS Documentation
 
@@ -36,6 +36,6 @@ Terraform Documentation
 
 AWS Certified Developer Study Guide
 
-License
+## License
 
 This project is licensed under the MIT License.
