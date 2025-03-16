@@ -8,6 +8,7 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as snsSubscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class MyBackendApiStack extends cdk.Stack {
     public readonly catalogItemsQueue: sqs.Queue;
@@ -18,10 +19,19 @@ export class MyBackendApiStack extends cdk.Stack {
         const productsTable = dynamodb.Table.fromTableName(this, 'AWSProductsTable', 'AWS_products');
         const stocksTable = dynamodb.Table.fromTableName(this, 'AWSStocksTable', 'AWS_stocks');
 
+        const catalogItemsDLQ = new sqs.Queue(this, 'CatalogItemsDLQ', {
+            queueName: 'catalogItemsDLQ',
+            retentionPeriod: cdk.Duration.days(14),
+        });
+
 
         this.catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
             queueName: 'catalogItemsQueue',
             visibilityTimeout: cdk.Duration.seconds(30),
+            deadLetterQueue: {
+                queue: catalogItemsDLQ,
+                maxReceiveCount: 5,
+            },
         });
 
         new cdk.CfnOutput(this, 'CatalogItemsQueueUrl', {
@@ -35,7 +45,7 @@ export class MyBackendApiStack extends cdk.Stack {
 
 
         createProductTopic.addSubscription(
-            new snsSubscriptions.EmailSubscription('your-email@example.com') // Replace with actual email
+            new snsSubscriptions.EmailSubscription('backend.aigul@gmail.com')
         );
 
         new cdk.CfnOutput(this, 'CreateProductTopicArn', {
@@ -47,6 +57,7 @@ export class MyBackendApiStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_18_X,
             entry: 'product-service/lambda/catalogBatchProcess.ts',
             handler: 'handler',
+            timeout: cdk.Duration.seconds(10),
             environment: {
                 PRODUCTS_TABLE_NAME: productsTable.tableName,
                 STOCKS_TABLE_NAME: stocksTable.tableName,
@@ -59,10 +70,18 @@ export class MyBackendApiStack extends cdk.Stack {
         stocksTable.grantReadWriteData(catalogBatchProcessLambda);
         createProductTopic.grantPublish(catalogBatchProcessLambda);
 
+        catalogBatchProcessLambda.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: ['sns:Publish'],
+                resources: [createProductTopic.topicArn],
+            })
+        );
+
 
         catalogBatchProcessLambda.addEventSource(
             new lambdaEventSources.SqsEventSource(this.catalogItemsQueue, {
-                batchSize: 5, // Process 5 messages at a time
+                batchSize: 5,
+                reportBatchItemFailures: true,
             })
         );
 

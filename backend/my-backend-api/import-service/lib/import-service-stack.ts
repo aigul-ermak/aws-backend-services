@@ -32,19 +32,60 @@ export class ImportServiceStack extends cdk.Stack {
                 handler: 'handler',
                 environment: {
                     SQS_QUEUE_URL: props.catalogItemsQueue.queueUrl,
+                    BUCKET_NAME: bucket.bucketName,
                 },
             }
         );
 
         bucket.grantRead(importFileParserLambda);
+        props.catalogItemsQueue.grantSendMessages(importFileParserLambda);
+
+
         bucket.addEventNotification(
             s3.EventType.OBJECT_CREATED,
             new s3n.LambdaDestination(importFileParserLambda),
             { prefix: 'uploaded/' }
         );
 
+        const importProductsFileLambda = new NodejsFunction(
+            this,
+            'ImportProductsFileLambda',
+            {
+                runtime: lambda.Runtime.NODEJS_18_X,
+                entry: 'import-service/lambda/importProductsFile.ts',
+                handler: 'handler',
+                environment: {
+                    UPLOADED_BUCKET_NAME: bucket.bucketName,
+                },
+            }
+        );
 
-        props.catalogItemsQueue.grantSendMessages(importFileParserLambda);
+        bucket.grantPut(importProductsFileLambda);
+
+        const api = new apigateway.RestApi(this, 'ImportApi', {
+            restApiName: 'Import Service API',
+            defaultCorsPreflightOptions: {
+                allowOrigins: apigateway.Cors.ALL_ORIGINS,
+                allowMethods: apigateway.Cors.ALL_METHODS,
+            },
+        });
+
+        const importResource = api.root.addResource('import');
+        importResource.addMethod(
+            'GET',
+            new apigateway.LambdaIntegration(importProductsFileLambda),
+            {
+                requestParameters: {
+                    'method.request.querystring.name': true,
+                    'method.request.querystring.contentType': false,
+                },
+            }
+        );
+
+        new cdk.CfnOutput(this, 'ImportAPIEndpoint', {
+            value: api.url,
+            description: 'API Gateway endpoint for import service',
+        });
 
     }
 }
