@@ -6,6 +6,7 @@ import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 interface ImportServiceStackProps extends cdk.StackProps {
     catalogItemsQueue: sqs.Queue;
@@ -36,6 +37,25 @@ export class ImportServiceStack extends cdk.Stack {
                 },
             }
         );
+
+        importFileParserLambda.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: ['s3:GetObject'],
+                resources: [`arn:aws:s3:::nodejs-aws-shop-react-assets-task5/uploaded/*`],
+            })
+        );
+
+        importFileParserLambda.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: [
+                    "sqs:SendMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:ChangeMessageVisibility",
+                ],
+                resources: [props.catalogItemsQueue.queueArn],
+            })
+        );
+
 
         bucket.grantRead(importFileParserLambda);
         props.catalogItemsQueue.grantSendMessages(importFileParserLambda);

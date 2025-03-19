@@ -72,6 +72,13 @@ export class MyBackendApiStack extends cdk.Stack {
 
         catalogBatchProcessLambda.addToRolePolicy(
             new iam.PolicyStatement({
+                actions: ['sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes',  'sqs:ChangeMessageVisibility'],
+                resources: [this.catalogItemsQueue.queueArn],
+            })
+        );
+
+        catalogBatchProcessLambda.addToRolePolicy(
+            new iam.PolicyStatement({
                 actions: ['sns:Publish'],
                 resources: [createProductTopic.topicArn],
             })
@@ -84,6 +91,9 @@ export class MyBackendApiStack extends cdk.Stack {
                 reportBatchItemFailures: true,
             })
         );
+
+        createProductTopic.grantPublish(catalogBatchProcessLambda);
+
 
         const api = new apigateway.RestApi(this, 'ProductServiceApi', {
             restApiName: 'Product Service',

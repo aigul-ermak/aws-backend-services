@@ -12,20 +12,27 @@ const STOCKS_TABLE = process.env.STOCKS_TABLE_NAME!;
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN!;
 
 export const handler = async (event: SQSEvent) => {
-    console.log("Processing batch:", JSON.stringify(event, null, 2));
+    console.log("Received SQS batch event:", JSON.stringify(event, null, 2));
 
+    if (!event.Records || event.Records.length === 0) {
+        console.log("No messages in the batch.");
+        return;
+    }
 
     await Promise.all(
         event.Records.map(async (record) => {
-            const product = JSON.parse(record.body);
-
-
-            if (!product.id || !product.title || !product.price) {
-                console.error("Invalid product data:", product);
-                return;
-            }
-
             try {
+                console.log(`🔍 Parsing message: ${JSON.stringify(record.body, null, 2)}`);
+                const messageBody = JSON.parse(record.body);
+                const product = messageBody.record;
+
+                if (!product || !product.id || !product.title || !product.price) {
+                    console.error("Invalid product data:", product);
+                    return;
+                }
+
+                console.log(`📦 Writing to DynamoDB: ${product.title}`);
+
                 await docClient.send(
                     new TransactWriteCommand({
                         TransactItems: [
@@ -53,8 +60,9 @@ export const handler = async (event: SQSEvent) => {
                     })
                 );
 
-                console.log(`✅ Inserted product: ${product.title}`);
+                console.log(`Inserted product into DynamoDB: ${product.title}`);
 
+                console.log(`Sending SNS notification for product: ${product.title}`);
 
                 await sns.send(
                     new PublishCommand({
@@ -62,6 +70,7 @@ export const handler = async (event: SQSEvent) => {
                         Message: JSON.stringify({
                             id: product.id,
                             title: product.title,
+                            description: product.description,
                             price: product.price,
                             stock: product.count ?? 0,
                         }),
@@ -69,9 +78,9 @@ export const handler = async (event: SQSEvent) => {
                     })
                 );
 
-                console.log(`Published to SNS: ${product.title}`);
+                console.log(`✅ Published to SNS: ${product.title}`);
             } catch (error) {
-                console.error(`Error processing product ${product.title}:`, error);
+                console.error(`Error processing message: ${record.body}`, error);
             }
         })
     );
