@@ -7,6 +7,8 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 interface ImportServiceStackProps extends cdk.StackProps {
     catalogItemsQueue: sqs.Queue;
@@ -90,6 +92,20 @@ export class ImportServiceStack extends cdk.Stack {
             },
         });
 
+        // auth
+        const authorizerLambdaArn = process.env.BASIC_AUTHORIZER_LAMBDA_ARN!;
+
+        const authorizerLambda = lambda.Function.fromFunctionArn(
+            this,
+            'ImportedBasicAuthorizerLambda',
+            authorizerLambdaArn
+        );
+
+        const authorizer = new apigateway.TokenAuthorizer(this, 'ImportApiLambdaAuthorizer', {
+            handler: authorizerLambda,
+            identitySource: apigateway.IdentitySource.header('Authorization'),
+        });
+
         const importResource = api.root.addResource('import');
         importResource.addMethod(
             'GET',
@@ -99,8 +115,11 @@ export class ImportServiceStack extends cdk.Stack {
                     'method.request.querystring.name': true,
                     'method.request.querystring.contentType': false,
                 },
+                authorizer,
+                authorizationType: apigateway.AuthorizationType.CUSTOM,
             }
         );
+
 
         new cdk.CfnOutput(this, 'ImportAPIEndpoint', {
             value: api.url,
