@@ -1,0 +1,17 @@
+# dependencies
+/node_modules
+
+# CDK and build output
+/cdk.out
+/dist
+.tsbuildinfo
+
+# environment variables
+.env
+
+# IDE/editor
+.vscode
+.idea
+
+# OS files
+.DS_Store
