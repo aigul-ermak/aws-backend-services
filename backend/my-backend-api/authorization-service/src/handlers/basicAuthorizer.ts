@@ -8,6 +8,7 @@ export const basicAuthorizer = async (
 ): Promise<APIGatewayAuthorizerResult> => {
     console.log('Received event:', event);
 
+
     if (!event.authorizationToken) {
         throw new Error('Unauthorized'); // API Gateway returns 401 automatically
     }
@@ -17,12 +18,16 @@ export const basicAuthorizer = async (
         const buffer = Buffer.from(encodedCredentials, 'base64');
         const [username, password] = buffer.toString('utf-8').split(':');
 
-        const storedPassword = process.env[username];
 
-        if (!storedPassword || storedPassword !== password) {
-            throw new Error('Forbidden');
+        const credentialsEnv = process.env.AUTH_CREDENTIALS || '';
+        const [validUser, validPass] = credentialsEnv.split('=');
+
+        if (username !== validUser || password !== validPass) {
+            console.warn(`Invalid credentials for user: ${username}`);
+            throw new Error('Forbidden'); // → Triggers 403
         }
 
+        console.log(`✅ Authenticated user: ${username}`);
         return generatePolicy(username, event.methodArn, 'Allow');
     } catch (error) {
         console.error('Error:', error);
