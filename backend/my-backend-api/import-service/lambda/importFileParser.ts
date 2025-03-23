@@ -44,7 +44,7 @@ export const handler: S3Handler = async (event: S3Event): Promise<void> => {
                                 bucket: bucket,
                                 key: key,
                                 record: {
-                                    id: data.id,
+                                    // id: data.id,
                                     title: data.title,
                                     description: data.description,
                                     price: data.price,
