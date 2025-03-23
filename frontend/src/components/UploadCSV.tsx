@@ -30,11 +30,21 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
     if (!file) return;
 
     try {
-      // 1. Get the signed URL from the import lambda
       const fileName = encodeURIComponent(file.name);
-      const url = `${importApiUrl}/import?name=${fileName}`;
+      const url = `${importApiUrl.replace(/\/+$/, "")}/import?name=${fileName}`;
 
-      const response = await fetch(url, { method: "GET" });
+      const authorization_token = localStorage.getItem("authorization_token");
+
+      if (!authorization_token) {
+        throw new Error("Authorization token missing in localStorage");
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Basic ${authorization_token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`Error getting signed URL: ${response.statusText}`);
