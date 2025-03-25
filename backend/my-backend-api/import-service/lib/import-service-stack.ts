@@ -7,6 +7,8 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 interface ImportServiceStackProps extends cdk.StackProps {
     catalogItemsQueue: sqs.Queue;
@@ -82,12 +84,49 @@ export class ImportServiceStack extends cdk.Stack {
 
         bucket.grantPut(importProductsFileLambda);
 
+        const corsOptions = {
+            allowOrigins: [
+                'https://d1lsm5asjne446.cloudfront.net',
+                'http://localhost:3000'
+            ],
+            allowMethods: apigateway.Cors.ALL_METHODS,
+            allowHeaders: [
+                'Content-Type',
+                'Authorization',
+                'X-Amz-Date',
+                'X-Api-Key',
+                'X-Amz-Security-Token'
+            ],
+            allowCredentials: true
+        };
+
         const api = new apigateway.RestApi(this, 'ImportApi', {
             restApiName: 'Import Service API',
-            defaultCorsPreflightOptions: {
-                allowOrigins: apigateway.Cors.ALL_ORIGINS,
-                allowMethods: apigateway.Cors.ALL_METHODS,
+            deployOptions: {
+                stageName: 'prod',
             },
+            defaultCorsPreflightOptions: corsOptions,
+            defaultMethodOptions: {
+                methodResponses: [
+                    { statusCode: '200' },
+                    { statusCode: '400' },
+                    { statusCode: '500' }
+                ]
+            }
+        });
+
+        // auth
+        const authorizerLambdaArn = process.env.BASIC_AUTHORIZER_LAMBDA_ARN!;
+
+        const authorizerLambda = lambda.Function.fromFunctionArn(
+            this,
+            'ImportedBasicAuthorizerLambda',
+            'arn:aws:lambda:us-east-1:111111111111:function:AuthorizationServiceStack-BasicAuthorizerLambdaXYZ'
+        );
+
+        const authorizer = new apigateway.TokenAuthorizer(this, 'ImportApiLambdaAuthorizer', {
+            handler: authorizerLambda,
+            identitySource: apigateway.IdentitySource.header('Authorization'),
         });
 
         const importResource = api.root.addResource('import');
@@ -97,10 +136,13 @@ export class ImportServiceStack extends cdk.Stack {
             {
                 requestParameters: {
                     'method.request.querystring.name': true,
-                    'method.request.querystring.contentType': false,
                 },
+                authorizer,
+                authorizationType: apigateway.AuthorizationType.CUSTOM,
             }
         );
+
+
 
         new cdk.CfnOutput(this, 'ImportAPIEndpoint', {
             value: api.url,

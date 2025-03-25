@@ -2,6 +2,7 @@ import { SQSEvent } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import { v4 as uuidv4 } from "uuid";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -26,10 +27,12 @@ export const handler = async (event: SQSEvent) => {
                 const messageBody = JSON.parse(record.body);
                 const product = messageBody.record;
 
-                if (!product || !product.id || !product.title || !product.price) {
+                if (!product || !product.title || !product.price) {
                     console.error("Invalid product data:", product);
                     return;
                 }
+
+                const generatedId = uuidv4();
 
                 console.log(`📦 Writing to DynamoDB: ${product.title}`);
 
@@ -40,7 +43,7 @@ export const handler = async (event: SQSEvent) => {
                                 Put: {
                                     TableName: PRODUCTS_TABLE,
                                     Item: {
-                                        id: product.id,
+                                        id: generatedId,
                                         title: product.title,
                                         description: product.description || "",
                                         price: product.price,
@@ -51,7 +54,7 @@ export const handler = async (event: SQSEvent) => {
                                 Put: {
                                     TableName: STOCKS_TABLE,
                                     Item: {
-                                        product_id: product.id,
+                                        product_id: generatedId,
                                         count: product.count ?? 0,
                                     },
                                 },
