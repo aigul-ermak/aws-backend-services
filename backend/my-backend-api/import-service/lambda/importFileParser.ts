@@ -62,7 +62,7 @@ export const handler: S3Handler = async (event: S3Event): Promise<void> => {
                         });
                 });
 
-                // ✅ Now send all records to SQS in parallel
+
                 await Promise.all(
                     parsedRecords.map(async (record) => {
                         try {

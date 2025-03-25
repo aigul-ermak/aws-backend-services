@@ -84,12 +84,35 @@ export class ImportServiceStack extends cdk.Stack {
 
         bucket.grantPut(importProductsFileLambda);
 
+        const corsOptions = {
+            allowOrigins: [
+                'https://d1lsm5asjne446.cloudfront.net',
+                'http://localhost:3000'
+            ],
+            allowMethods: apigateway.Cors.ALL_METHODS,
+            allowHeaders: [
+                'Content-Type',
+                'Authorization',
+                'X-Amz-Date',
+                'X-Api-Key',
+                'X-Amz-Security-Token'
+            ],
+            allowCredentials: true
+        };
+
         const api = new apigateway.RestApi(this, 'ImportApi', {
             restApiName: 'Import Service API',
-            defaultCorsPreflightOptions: {
-                allowOrigins: apigateway.Cors.ALL_ORIGINS,
-                allowMethods: apigateway.Cors.ALL_METHODS,
+            deployOptions: {
+                stageName: 'prod',
             },
+            defaultCorsPreflightOptions: corsOptions,
+            defaultMethodOptions: {
+                methodResponses: [
+                    { statusCode: '200' },
+                    { statusCode: '400' },
+                    { statusCode: '500' }
+                ]
+            }
         });
 
         // auth
@@ -98,7 +121,7 @@ export class ImportServiceStack extends cdk.Stack {
         const authorizerLambda = lambda.Function.fromFunctionArn(
             this,
             'ImportedBasicAuthorizerLambda',
-            authorizerLambdaArn
+            'arn:aws:lambda:us-east-1:111111111111:function:AuthorizationServiceStack-BasicAuthorizerLambdaXYZ'
         );
 
         const authorizer = new apigateway.TokenAuthorizer(this, 'ImportApiLambdaAuthorizer', {
@@ -113,12 +136,12 @@ export class ImportServiceStack extends cdk.Stack {
             {
                 requestParameters: {
                     'method.request.querystring.name': true,
-                    'method.request.querystring.contentType': false,
                 },
                 authorizer,
                 authorizationType: apigateway.AuthorizationType.CUSTOM,
             }
         );
+
 
 
         new cdk.CfnOutput(this, 'ImportAPIEndpoint', {

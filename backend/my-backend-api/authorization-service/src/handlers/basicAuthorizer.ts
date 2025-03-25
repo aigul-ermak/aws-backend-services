@@ -1,7 +1,5 @@
 import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult, StatementEffect } from 'aws-lambda';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
 
 export const basicAuthorizer = async (
     event: APIGatewayTokenAuthorizerEvent
@@ -10,7 +8,8 @@ export const basicAuthorizer = async (
 
 
     if (!event.authorizationToken) {
-        throw new Error('Unauthorized'); // API Gateway returns 401 automatically
+        console.warn("No Authorization token provided.");
+        throw new Error('Unauthorized');
     }
 
     try {

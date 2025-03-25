@@ -8,6 +8,21 @@ const BUCKET_NAME = "nodejs-aws-shop-react-assets-task5";
 const s3 = new S3Client({ region: REGION });
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    console.log("Incoming event:", JSON.stringify(event));
+    console.log("Region:", REGION);
+    console.log("Bucket Name:", BUCKET_NAME);
+
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+            },
+            body: '',
+        };
+    }
     try {
         const fileName = event.queryStringParameters?.name;
         if (!fileName) {
