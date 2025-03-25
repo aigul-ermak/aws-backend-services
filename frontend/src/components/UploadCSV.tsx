@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import API_PATHS from "~/constants/apiPaths";
 
 interface UploadCSVProps {
   importApiUrl: string;
@@ -11,7 +10,7 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
   const [file, setFile] = useState<File | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
-  console.log("Import API Path:", API_PATHS.import);
+  console.log("Import API Path:", importApiUrl);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -22,7 +21,7 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
   const removeFile = () => {
     setFile(null);
     if (uploadInputRef.current) {
-      uploadInputRef.current.value = ""; // Clear the file input
+      uploadInputRef.current.value = "";
     }
   };
 
@@ -35,6 +34,10 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
 
       const authorization_token = localStorage.getItem("authorization_token");
 
+      console.log("Using Authorization token:", authorization_token);
+      console.log("Uploading file:", file.name);
+      console.log("Requesting signed URL from:", url);
+
       if (!authorization_token) {
         throw new Error("Authorization token missing in localStorage");
       }
@@ -46,12 +49,19 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
         },
       });
 
+      console.log("Signed URL fetch response status:", response.status);
+
       if (!response.ok) {
-        throw new Error(`Error getting signed URL: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(
+          `Error getting signed URL: ${response.statusText} - ${errorText}`
+        );
       }
+
       const signedUrl = await response.text();
 
-      // 2. PUT the file directly to S3 using the signed URL
+      console.log("Received signed URL:", signedUrl);
+
       const uploadResponse = await fetch(signedUrl, {
         method: "PUT",
         headers: {
@@ -60,19 +70,29 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
         body: file,
       });
 
+      console.log("Upload to S3 response status:", uploadResponse.status);
+
       if (!uploadResponse.ok) {
         throw new Error(`Error uploading file: ${uploadResponse.statusText}`);
       }
 
       alert("File uploaded successfully!");
-
       console.log("Uploaded file:", file.name);
-      console.log("Signed URL used:", signedUrl);
 
       removeFile();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
-      alert("File upload failed. Check console for details.");
+
+      if (
+        error instanceof TypeError &&
+        error.message.includes("Failed to fetch")
+      ) {
+        alert(
+          "CORS issue: Make sure the API Gateway returns proper CORS headers."
+        );
+      } else {
+        alert("Upload failed: " + error.message);
+      }
     }
   };
 
@@ -110,9 +130,7 @@ const UploadCSV: React.FC<UploadCSVProps> = ({ importApiUrl }) => {
             size="small"
             color="primary"
             variant="contained"
-            onClick={() =>
-              uploadInputRef.current && uploadInputRef.current.click()
-            }
+            onClick={() => uploadInputRef.current?.click()}
           >
             Import CSV File
           </Button>
